@@ -1,0 +1,32 @@
+general_settings: 
+  master_key: litellm-my-private-local-key
+ 
+  forward_client_headers_to_llm_api: True
+
+litellm_settings:
+  modify_params: True
+  telemetry: True
+  drop_params: True # Needed for claude code
+  turn_off_message_logging: False
+  disable_end_user_cost_tracking: True
+  enable_json_schema_validation: True
+
+# https://docs.litellm.ai/docs/providers/anthropic
+router_settings:
+  model_group_alias: {
+    "gemini-2.5-flash-lite" : "github_copilot/gemini-2.5-pro",
+    "gemini-3-pro"          : "github_copilot/gemini-3-pro-preview",
+    "gemini-3-flash-preview": "github_copilot/gemini-3-pro-preview",
+
+    "claude-sonnet-4-5-20250929": "github_copilot/claude-sonnet-4.5",
+    "claude-sonnet-4-20250514"  : "github_copilot/claude-sonnet-4",
+
+    "claude-opus-4-5-20251101": "github_copilot/claude-opus-4.5",
+    "claude-opus-4-1-20250805": "github_copilot/claude-opus-4.5",
+
+    "claude-3-haiku-20240307"  : "github_copilot/claude-haiku-4.5",
+    "claude-haiku-4-5-20251001": "github_copilot/claude-haiku-4.5"
+  }
+
+include:
+  - model_config.yaml
