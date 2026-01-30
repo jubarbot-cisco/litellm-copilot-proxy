@@ -4,8 +4,9 @@ PORT = 4445
 
 install:
 	uv tool install litellm
+	uv tool upgrade litellm
 
-run:
+run: install
 	@echo "Local LiteLLM Api Key:" $$(grep "master_key" litellm-config.yaml | cut -d: -f 2)
 	uv run litellm --config litellm-config.yaml --port $(PORT)
 
