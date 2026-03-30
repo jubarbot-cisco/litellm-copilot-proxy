@@ -104,13 +104,6 @@ model_list:
     # Claude Haiku 4.5 (Anthropic) - enabled
     # Max tokens: 64000, Context: 200000
 
-  - model_name: gemini-3-pro-preview
-    litellm_params:
-      model: github_copilot/gemini-3-pro-preview
-      extra_headers: {"Editor-Version": "vscode/1.108.2", "Copilot-Integration-Id": "vscode-chat"}
-    # Gemini 3 Pro (Preview) (Google) - enabled
-    # Max tokens: 64000, Context: 200000
-
   - model_name: gemini-3-flash-preview
     litellm_params:
       model: github_copilot/gemini-3-flash-preview
@@ -152,13 +145,6 @@ model_list:
       extra_headers: {"Editor-Version": "vscode/1.108.2", "Copilot-Integration-Id": "vscode-chat"}
     # GPT 4 (Azure OpenAI) - enabled
     # Max tokens: 4096, Context: 32768
-
-  - model_name: gpt-4-0125-preview
-    litellm_params:
-      model: github_copilot/gpt-4-0125-preview
-      extra_headers: {"Editor-Version": "vscode/1.108.2", "Copilot-Integration-Id": "vscode-chat"}
-    # GPT 4 Turbo (Azure OpenAI) - enabled
-    # Max tokens: 4096, Context: 128000
 
   - model_name: gpt-4o-2024-05-13
     litellm_params:
