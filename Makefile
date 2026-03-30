@@ -18,8 +18,8 @@ $(shell \
 endef
 
 install:
-	uv tool install --python $(PYTHON_VERSION) 'litellm[proxy]'
-	uv tool upgrade --python $(PYTHON_VERSION) 'litellm[proxy]'
+	echo "Nothing to do"
+	uv tool install --python $(PYTHON_VERSION) 'litellm[proxy]==1.82.6'
 
 run: install
 	@echo "Local LiteLLM Api Key:" $$(grep "master_key" litellm-config.yaml | cut -d: -f 2)
