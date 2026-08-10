@@ -6,11 +6,10 @@ general_settings:
 litellm_settings:
   default_max_tokens: 8096
   # set_verbose: true
-  ssl_verify: false
-  # modify_params: True
-  telemetry: True
-  drop_params: true # Needed for claude code over github copilot
-  turn_off_message_logging: False
+  modify_params: True
+  telemetry: False
+  drop_params: True # Needed for claude code over github copilot
+  turn_off_message_logging: True
   disable_end_user_cost_tracking: True
   enable_json_schema_validation: True
 
