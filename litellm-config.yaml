@@ -18,5 +18,18 @@ litellm_settings:
 router_settings:
   model_group_alias: {}
 
+model_list:
+    # Complexity router
+  - model_name: smart-router
+    litellm_params:
+      model: auto_router/complexity_router
+      complexity_router_config:
+        tiers:
+          SIMPLE: claude-haiku-4.5
+          MEDIUM: gpt-5.4-mini
+          COMPLEX: claude-sonnet-4.6
+          REASONING: claude-opus-4.8
+      complexity_router_default_model: gpt-4o
+
 include:
   - model_config.yaml
