@@ -1,4 +1,6 @@
-LITELLM_VERSION = 1.89.1
+LITELLM_VERSION = 1.95.0
+CERT_FILE = corporate-ca.pem
+CA_BUNDLE = ca-bundle.pem
 
 API_KEY_FILE = ~/.config/litellm/github_copilot/api-key.json
 ACCESS_TOKEN_FILE = ~/.config/litellm/github_copilot/access-token
@@ -40,11 +42,26 @@ model_config.yaml:
 docker-network:
 	@docker network inspect $(NETWORK_NAME) >/dev/null 2>&1 || docker network create $(NETWORK_NAME)
 
-docker-run: docker-network
+extract-cert:
+	openssl s_client -connect api.anthropic.com:443 -showcerts 2>/dev/null < /dev/null \
+	  | awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/' > $(CERT_FILE)
+	@echo "Extracted $$(grep -c 'BEGIN CERTIFICATE' $(CERT_FILE)) cert(s) to $(CERT_FILE)"
+
+$(CERT_FILE):
+	$(MAKE) extract-cert
+
+$(CA_BUNDLE): $(CERT_FILE)
+	docker run --rm --entrypoint cat ghcr.io/berriai/litellm:v$(LITELLM_VERSION) /etc/ssl/certs/ca-certificates.crt > $(CA_BUNDLE)
+	cat $(CERT_FILE) >> $(CA_BUNDLE)
+	@echo "Built bundle with $$(grep -c 'BEGIN CERTIFICATE' $(CA_BUNDLE)) cert(s)"
+
+docker-run: docker-network $(CA_BUNDLE)
 	cosign verify --key https://raw.githubusercontent.com/BerriAI/litellm/0112e53046018d726492c814b3644b7d376029d0/cosign.pub ghcr.io/berriai/litellm:v$(LITELLM_VERSION)
 	@echo "Local LiteLLM Api Key:" $$(grep "master_key" litellm-config.yaml | cut -d: -f 2)
 	docker run --rm -it \
 		--env-file .env \
+		--env SSL_CERT_FILE=/app/certs/$(CA_BUNDLE) \
+		--env REQUESTS_CA_BUNDLE=/app/certs/$(CA_BUNDLE) \
 		--name 'litellm-proxy' \
 		--network $(NETWORK_NAME) \
 		-p $(PORT):$(PORT) \
@@ -52,7 +69,8 @@ docker-run: docker-network
 		-v $(PWD)/model_config.yaml:/app/model_config.yaml:ro \
 		-v $(PWD)/cisco_models_config.yaml:/app/cisco_models_config.yaml:ro \
 		-v $(HOME)/.config/litellm/github_copilot:/root/.config/litellm/github_copilot \
+		-v $(PWD)/$(CA_BUNDLE):/app/certs/$(CA_BUNDLE):ro \
 		ghcr.io/berriai/litellm:v$(LITELLM_VERSION) \
 		--config /app/litellm-config.yaml --host 0.0.0.0 --port $(PORT)
 
-.PHONY: install run model_config.yaml docker-network docker-run
+.PHONY: install run model_config.yaml docker-network extract-cert docker-run
