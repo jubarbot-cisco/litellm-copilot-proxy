@@ -1,4 +1,4 @@
-LITELLM_VERSION = 1.96.0
+LITELLM_VERSION = 1.101.0
 CERT_FILE = corporate-ca.pem
 CA_BUNDLE = ca-bundle.pem
 
@@ -27,15 +27,16 @@ install:
 	uv tool install --python $(PYTHON_VERSION) 'litellm[proxy]==$(LITELLM_VERSION)'
 
 run: install
-	@echo "Local LiteLLM Api Key:" $$(grep "master_key" litellm-config.yaml | cut -d: -f 2)
-	uv tool run --python $(PYTHON_VERSION) litellm --config litellm-config.yaml --port $(PORT)
+	set -a; . ./.env; set +a; \
+	uv tool run --python $(PYTHON_VERSION) litellm \
+		--config litellm-config.yaml --host 127.0.0.1 --port $(PORT)
 
 model_config.yaml:
 	@echo 'model_list:' > model_config.yaml
 
-	@curl -s -H 'Content-Type: application/json' \
+	curl -s -H 'Content-Type: application/json' \
 		-H "Authorization: Bearer $(call get_token)" \
-		-H 'Editor-Version: vscode/1.108.2' \
+		-H 'Editor-Version: vscode/1.134' \
 		'$(MODELS_API)' | jq -r -f get_model_config.jq >> model_config.yaml
 
 
@@ -57,20 +58,31 @@ $(CA_BUNDLE): $(CERT_FILE)
 
 docker-run: docker-network $(CA_BUNDLE)
 	cosign verify --key https://raw.githubusercontent.com/BerriAI/litellm/0112e53046018d726492c814b3644b7d376029d0/cosign.pub ghcr.io/berriai/litellm:v$(LITELLM_VERSION)
-	@echo "Local LiteLLM Api Key:" $$(grep "master_key" litellm-config.yaml | cut -d: -f 2)
+	# Container listens on all interfaces; Docker publishes it on host loopback only.
 	docker run --rm -it \
 		--env-file .env \
 		--env SSL_CERT_FILE=/app/certs/$(CA_BUNDLE) \
 		--env REQUESTS_CA_BUNDLE=/app/certs/$(CA_BUNDLE) \
 		--name 'litellm-proxy' \
 		--network $(NETWORK_NAME) \
-		-p $(PORT):$(PORT) \
+		-p 127.0.0.1:$(PORT):$(PORT) \
+		--health-cmd "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:$(PORT)/health/readiness\")'" \
+		--health-interval 30s \
+		--health-start-period 40s \
 		-v $(PWD)/litellm-config.yaml:/app/litellm-config.yaml:ro \
 		-v $(PWD)/model_config.yaml:/app/model_config.yaml:ro \
 		-v $(PWD)/cisco_models_config.yaml:/app/cisco_models_config.yaml:ro \
+		-v $(PWD)/things_models_config.yaml:/app/things_models_config.yaml:ro \
 		-v $(HOME)/.config/litellm/github_copilot:/root/.config/litellm/github_copilot \
 		-v $(PWD)/$(CA_BUNDLE):/app/certs/$(CA_BUNDLE):ro \
 		ghcr.io/berriai/litellm:v$(LITELLM_VERSION) \
 		--config /app/litellm-config.yaml --host 0.0.0.0 --port $(PORT)
 
-.PHONY: install run model_config.yaml docker-network extract-cert docker-run
+check:
+	@ruby -e 'require "yaml"; ARGV.each { |path| YAML.safe_load(File.read(path), aliases: true) }' \
+		litellm-config.yaml model_config.yaml cisco_models_config.yaml things_models_config.yaml
+	@test -f .env || { echo ".env missing"; exit 1; }
+	@grep -q '^LITELLM_MASTER_KEY=' .env || { echo "LITELLM_MASTER_KEY missing from .env"; exit 1; }
+	@echo "config OK"
+
+.PHONY: install run model_config.yaml docker-network extract-cert docker-run check

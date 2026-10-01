@@ -1,8 +1,6 @@
-general_settings: 
-  master_key: litellm-my-private-local-key
- 
-  forward_client_headers_to_llm_api: True
-
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # forward_client_headers_to_llm_api: True
 litellm_settings:
   default_max_tokens: 8096
   # set_verbose: true
@@ -12,23 +10,46 @@ litellm_settings:
   turn_off_message_logging: True
   disable_end_user_cost_tracking: True
   enable_json_schema_validation: True
+  json_logs: True
+  request_timeout: 300
 
-# https://docs.litellm.ai/docs/providers/anthropic
 router_settings:
   model_group_alias: {}
+  num_retries: 2
+  retry_policy:
+    TimeoutErrorRetries: 2
+    RateLimitErrorRetries: 2
+    InternalServerErrorRetries: 2
+    ServiceUnavailableErrorRetries: 2
+    BadRequestErrorRetries: 0
+    AuthenticationErrorRetries: 0
+    ContentPolicyViolationErrorRetries: 0
 
-model_list:
-    # Complexity router
-  - model_name: smart-router
-    litellm_params:
-      model: auto_router/complexity_router
-      complexity_router_config:
-        tiers:
-          SIMPLE: claude-haiku-4.5
-          MEDIUM: gpt-5.4-mini
-          COMPLEX: claude-sonnet-4.6
-          REASONING: claude-opus-4.8
-      complexity_router_default_model: gpt-4o
+  # Fallback example, intentionally inactive. Enabling a fallback sends the
+  # prompt to another model. Keep fallbacks within one provider unless both
+  # providers have equivalent data-handling terms.
+  # fallbacks:
+  #   - cisco-claude-opus-5: [cisco-claude-opus-4-8]
+  #   - cisco-claude-sonnet-4-6: [cisco-claude-sonnet-5]
+  #   - copilot-gpt-5.6-sol: [copilot-gpt-5.6-terra]
+
+model_list: []
+
+# Complexity router, configured with valid aliases but intentionally inactive.
+# Uncomment this block to expose smart-router, then run `make check`.
+# model_list:
+#   - model_name: smart-router
+#     litellm_params:
+#       model: auto_router/complexity_router
+#       complexity_router_config:
+#         tiers:
+#           SIMPLE: cisco-claude-haiku-4-5
+#           MEDIUM: cisco-gpt-5-mini
+#           COMPLEX: cisco-claude-sonnet-4-6
+#           REASONING: cisco-claude-opus-4-8
+#       complexity_router_default_model: cisco-gpt-4o-mini
 
 include:
   - model_config.yaml
+  - cisco_models_config.yaml
+  - things_models_config.yaml
