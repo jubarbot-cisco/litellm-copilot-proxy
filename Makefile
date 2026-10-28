@@ -1,4 +1,4 @@
-LITELLM_VERSION = 1.101.0
+LITELLM_VERSION = 1.104.0
 CERT_FILE = corporate-ca.pem
 CA_BUNDLE = ca-bundle.pem
 
